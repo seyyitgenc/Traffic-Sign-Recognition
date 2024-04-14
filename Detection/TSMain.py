@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-
+import time
 #modelPath = '/home/mario/Graduation Project/Customize TSC/03-Classification/Models'
 model = keras.models.load_model("Detection\model.h5")
 
@@ -13,6 +13,7 @@ def returnRedness(img):
 
 def threshold(img,T=150):
 	_, img = cv2.threshold(img,T,255,cv2.THRESH_BINARY)
+	cv2.imshow("test",img)
 	return img 
 
 def findContour(img):
@@ -30,10 +31,11 @@ def boundaryBox(img,contours):
 	sign = img[y:(y+h) , x:(x+w)]
 	return img, sign
 
-def preprocessingImageToClassifier(image=None,imageSize=28,mu=89.77428691773054,std=70.85156431910688):
+def preprocessingImageToClassifier(image=None,imageSize=32,mu=89.77428691773054,std=70.85156431910688):
 	image = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
 	image = cv2.resize(image,(imageSize,imageSize))
 	image = cv2.equalizeHist(image)
+	cv2.imshow('frame',img)
 	image = image/255
 	image = image.reshape(1,imageSize,imageSize,1)
 	return image
@@ -45,10 +47,11 @@ def predict(sign):
     return predicted_class, probabilities[predicted_class]
 
 #--------------------------------------------------------------------------
-labelToText = { 14:"Stop",
-    			17:"Do not Enter",
-    			2:"Traffic jam is close",
-    			13:"Yeild"}
+labelToText = { 0:"Stop",
+    			1:"Turn Left",
+    			2:"Turn Right",
+    			3:"Forward"}
+# cap=cv2.VideoCapture('C:/projects_ai/Traffic-Sign-Recognition/Test Video/test2.mp4')
 cap=cv2.VideoCapture(0)
 
 while(True):
@@ -61,7 +64,7 @@ while(True):
 		if cv2.contourArea(big) > 3000:
 			print(cv2.contourArea(big))
 			img,sign = boundaryBox(frame,big)
-			cv2.imshow('frame',img)
+			cv2.imshow('frame2',sign)
 			predicted_class, probability = predict(sign)
 			if(probability * 100 > 20):
 				print(f"Now, I see: {labelToText[predicted_class]} with probability: {probability}")
@@ -69,7 +72,7 @@ while(True):
 			cv2.imshow('frame',frame)
 	except:
 		cv2.imshow('frame',frame)
-
+	time.sleep(0.100)
 	if cv2.waitKey(1) & 0xFF == ord('q'):
 		break
 

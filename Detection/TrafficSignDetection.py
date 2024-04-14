@@ -4,8 +4,8 @@ import time
 import os
 from tensorflow import keras
 
-model = keras.models.load_model("model.h5")
-ImagesFilePath='C:/ai-projects/Traffic-Sign-Recognition/TS Sences/Sences'
+model = keras.models.load_model("Detection\model.h5")
+ImagesFilePath='C:/projects_ai/Traffic-Sign-Recognition/TS Sences\Sences'
 ImageNamePath=os.listdir(ImagesFilePath)
 
 def readImage(imagePath):
@@ -67,9 +67,9 @@ def predict4(sign):
 	img=preprocessingImageToClassifier(sign,imageSize=28)
 	return np.argmax(model.predict(img))
 
-def predict3(sign):
-	img=preprocessingImageToClassifier(sign,imageSize=32)
-	return np.argmax(model1.predict(img))
+# def predict3(sign):
+	# img=preprocessingImageToClassifier(sign,imageSize=32)
+	# return np.argmax(model1.predict(img))
 
 labelToText={0:"Stop",
     		1:"Do not Enter",

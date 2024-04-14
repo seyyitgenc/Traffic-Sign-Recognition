@@ -3,9 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-modelPath = '/home/mario/Graduation Project/Customize TSC/03-Classification/Models'
-model = keras.models.load_model(modelPath+'/TSModel5')
-
+model = keras.models.load_model("Detection\model.h5")
 def returnRedness(img):
 	yuv=cv2.cvtColor(img,cv2.COLOR_BGR2YUV)
 	y,u,v=cv2.split(yuv)
