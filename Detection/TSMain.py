@@ -1,19 +1,27 @@
 import cv2
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
+import onnxruntime as rt
 import time
-#modelPath = '/home/mario/Graduation Project/Customize TSC/03-Classification/Models'
-model = keras.models.load_model("Detection\model.h5")
+
+modelPath = 'C:\projects_ai\Traffic-Sign-Recognition\sign.onnx'
+# model = keras.models.load_model("Detection\model.h5")
+
+# Load the ONNX model
+sess = rt.InferenceSession(modelPath)
 
 def returnRedness(img):
 	yuv = cv2.cvtColor(img,cv2.COLOR_BGR2YUV)
 	y, u, v = cv2.split(yuv)
 	return v
 
+def returnBlueness(img):
+	yuv = cv2.cvtColor(img,cv2.COLOR_BGR2YUV)
+	y, u, v = cv2.split(yuv)
+	return u
+
 def threshold(img,T=150):
 	_, img = cv2.threshold(img,T,255,cv2.THRESH_BINARY)
-	cv2.imshow("test",img)
 	return img 
 
 def findContour(img):
@@ -35,16 +43,17 @@ def preprocessingImageToClassifier(image=None,imageSize=32,mu=89.77428691773054,
 	image = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
 	image = cv2.resize(image,(imageSize,imageSize))
 	image = cv2.equalizeHist(image)
-	cv2.imshow('frame',img)
+	image = image.astype(np.float32)  # Convert to float32
 	image = image/255
 	image = image.reshape(1,imageSize,imageSize,1)
 	return image
 
 def predict(sign):
-    img = preprocessingImageToClassifier(sign, imageSize=32)
-    probabilities = model.predict(img)[0]
-    predicted_class = np.argmax(probabilities)
-    return predicted_class, probabilities[predicted_class]
+	img = preprocessingImageToClassifier(sign, imageSize=32)
+	input_name = sess.get_inputs()[0].name
+	probabilities = sess.run(None, {input_name: img})
+	predicted_class = np.argmax(probabilities)
+	return predicted_class, np.max(probabilities)
 
 #--------------------------------------------------------------------------
 labelToText = { 0:"Stop",
@@ -54,25 +63,35 @@ labelToText = { 0:"Stop",
 # cap=cv2.VideoCapture('C:/projects_ai/Traffic-Sign-Recognition/Test Video/test2.mp4')
 cap=cv2.VideoCapture(0)
 
+swap : bool = True
+
 while(True):
 	_, frame = cap.read()
-	redness = returnRedness(frame) # step 1 --> specify the redness of the image
-	thresh = threshold(redness) 	
+	redness = returnRedness(frame)
+	blueness = returnBlueness(frame) 
+
+	blue_region = threshold(blueness)
+	red_region = threshold(redness)
 	try:
-		contours = findContour(thresh)
+		contours = 0
+		# if swap:
+		# 	contours = findContour(blue_region)
+		# 	swap = False
+		# else:
+		contours = findContour(red_region)
+			# swap = True
 		big = findBiggestContour(contours)
 		if cv2.contourArea(big) > 3000:
-			print(cv2.contourArea(big))
 			img,sign = boundaryBox(frame,big)
-			cv2.imshow('frame2',sign)
 			predicted_class, probability = predict(sign)
+			print(predicted_class)
 			if(probability * 100 > 20):
 				print(f"Now, I see: {labelToText[predicted_class]} with probability: {probability}")
-		else:
-			cv2.imshow('frame',frame)
-	except:
 		cv2.imshow('frame',frame)
-	time.sleep(0.100)
+	except Exception as e:
+		print(f"An error occurred: {e}")
+		cv2.imshow('frame',frame)
+
 	if cv2.waitKey(1) & 0xFF == ord('q'):
 		break
 
